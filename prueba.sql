@@ -1,7 +1,10 @@
 -- Create DB
 CREATE DATABASE desafio_latam;
 
--- Creando tablas
+-- Conectando
+\c desafio_latam;
+
+--- Creando tablas
 
 CREATE TABLE peliculas
 (
@@ -22,7 +25,7 @@ CREATE TABLE peliculas_tags
     tags_id BIGINT REFERENCES tags(tags_id)
 );
 
--- Insertando información
+--- Insertando información
 INSERT INTO peliculas(nombre, anno) VALUES ('Van Helsing', 2004);
 INSERT INTO peliculas(nombre, anno) VALUES ('Inception', 2010);
 INSERT INTO peliculas(nombre, anno) VALUES ('Interestellar', 2014);
@@ -39,7 +42,7 @@ INSERT INTO tags(tag) VALUES ('Drama');
 SELECT * FROM peliculas;
 SELECT * FROM tags;
 
--- Agregando información a peliculas_tags
+--- Agregando información a peliculas_tags
 
 INSERT INTO peliculas_tags(peliculas_id, tags_id) VALUES (1, 1);
 INSERT INTO peliculas_tags(peliculas_id, tags_id) VALUES (1, 2);
@@ -50,17 +53,17 @@ INSERT INTO peliculas_tags(peliculas_id, tags_id) VALUES (2, 4);
 -- Checkin Info again
 SELECT * FROM peliculas_tags;
 
--- Tags de cada película
+--- Tags de cada película
 SELECT peliculas.nombre, COUNT(tags) as tags FROM peliculas 
 LEFT JOIN peliculas_tags USING (peliculas_id)
 LEFT JOIN tags USING (tags_id)
 GROUP BY peliculas.nombre;
 
--- Crear un nuevo modelo
+--- Crear un nuevo modelo
 -- Para hacerlo más "realista", lo haremos con UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Creando tablas
+--- Creando tablas
 CREATE TABLE questions
 (
     questions_uid UUID NOT NULL PRIMARY KEY,
@@ -133,18 +136,37 @@ INSERT INTO answers(answers_uid, users_uid, questions_uid, answer) VALUES (
     uuid_generate_v4(), '1bac9f02-5cf9-4816-8847-3e04fb375557', '920f8201-4371-4fed-bd55-d5aa85b93e74', 'No sé :c'
 );
 
--- Cuenta la cantidad de respuestas correctas totales por usuario (independiente de la pregunta).
-SELECT * FROM answers 
-LEFT JOIN questions ON answers.users_uid = questions.questions_uid
-LEFT JOIN users ON answers.users_uid = users.users_uid 
-WHERE answers.answer = questions.right_answer;
+-- Checkin
+SELECT * FROM questions;
+SELECT * FROM users;
+SELECT * FROM answers;
 
--- Por cada pregunta, en la tabla preguntas, cuenta cuántos usuarios tuvieron la respuesta correcta.
-SELECT question FROM questions;
+--- Cuenta la cantidad de respuestas correctas totales por usuario (independiente de la pregunta).
+SELECT users.name, questions.right_answer, COUNT(*) FROM answers
+LEFT JOIN users USING (users_uid)
+LEFT JOIN questions USING (questions_uid) WHERE questions.right_answer = answer
+GROUP BY users.name, questions.right_answer;
 
--- Implementa borrado en cascada de las respuestas al borrar un usuario y borrar 
--- el primer usuario para probar la implementación. 
+--- Por cada pregunta, en la tabla preguntas, cuenta cuántos usuarios tuvieron la respuesta correcta.
+SELECT questions.question, COUNT(*) AS total_rights_answer_users FROM answers
+LEFT JOIN users USING (users_uid)
+LEFT JOIN questions USING (questions_uid) WHERE questions.right_answer = answer
+GROUP BY questions.question;
 
--- Crea una restricción que impida insertar usuarios menores de 18 años en la base de datos.
+--- Implementa borrado en cascada de las respuestas al borrar un usuario y borrar 
+--- el primer usuario para probar la implementación. 
 
--- Altera la tabla existente de usuarios agregando el campo email con la restricción de único.
+--- Crea una restricción que impida insertar usuarios menores de 18 años en la base de datos.
+ALTER TABLE users ADD CONSTRAINT users_age_contraint CHECK (age > 17);
+
+-- Check
+INSERT INTO users(users_uid, name, age) VALUES (
+    uuid_generate_v4(), 'Mario', 14
+);
+
+--- Altera la tabla existente de usuarios agregando el campo email con la restricción de único.
+ALTER TABLE users ADD COLUMN email VARCHAR(255) UNIQUE;
+
+-- Check
+SELECT * FROM users;
+\d users;
