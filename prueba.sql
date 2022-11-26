@@ -151,22 +151,31 @@ SELECT * FROM users;
 SELECT * FROM answers;
 
 --- Cuenta la cantidad de respuestas correctas totales por usuario (independiente de la pregunta).
-SELECT users.name, COUNT(*) AS total_right_answers FROM answers
+SELECT users.name, COUNT(*) FILTER (WHERE questions.right_answer = answer) AS total_right_answers FROM answers
 LEFT JOIN users USING (users_uid)
 LEFT JOIN questions USING (questions_uid) 
-WHERE questions.right_answer = answer
 GROUP BY users.name;
 
-
-SELECT users.name FROM answers
-LEFT JOIN users USING (users_uid)
-LEFT JOIN questions USING (questions_uid);
-
 --- Por cada pregunta, en la tabla preguntas, cuenta cuántos usuarios tuvieron la respuesta correcta.
-SELECT questions.question, COUNT(*) AS total_rights_answer_users FROM answers
-LEFT JOIN users USING (users_uid)
-LEFT JOIN questions USING (questions_uid) 
-WHERE questions.right_answer = answer
+SELECT question, COUNT(*) AS total FROM questions
+LEFT JOIN answers ON answers.answers_uid = questions.questions_uid
+WHERE questions.right_answer = answers.answer
+GROUP BY question;
+
+
+SELECT question, COUNT(*) FILTER (WHERE questions.right_answer = answers.answer) AS total FROM questions
+LEFT JOIN answers ON answers.answers_uid = questions.questions_uid
+GROUP BY question;
+
+
+SELECT question FROM questions
+LEFT JOIN answers ON answers.answers_uid = questions.questions_uid;
+
+
+
+
+SELECT questions.question, COUNT(answers.users_uid) AS Total_right_answers FROM answers
+RIGHT JOIN questions ON answers.questions_uid = questions.questions_uid
 GROUP BY questions.question;
 
 --- Implementa borrado en cascada de las respuestas al borrar un usuario y borrar 
