@@ -6,6 +6,9 @@ CREATE DATABASE desafio_latam;
 
 --- Creando tablas
 
+--- Crea el modelo (revisa bien cuál es el tipo de relación antes de crearlo), respeta las
+--- claves primarias, foráneas y tipos de datos.
+
 CREATE TABLE peliculas
 (
     peliculas_id BIGSERIAL NOT NULL PRIMARY KEY,
@@ -25,7 +28,8 @@ CREATE TABLE peliculas_tags
     tags_id BIGINT REFERENCES tags(tags_id)
 );
 
---- Insertando información
+---Inserta 5 películas y 5 tags, la primera película tiene que tener 3 tags asociados, la
+---segunda película debe tener dos tags asociados
 INSERT INTO peliculas(nombre, anno) VALUES ('Van Helsing', 2004);
 INSERT INTO peliculas(nombre, anno) VALUES ('Inception', 2010);
 INSERT INTO peliculas(nombre, anno) VALUES ('Interestellar', 2014);
@@ -38,12 +42,6 @@ INSERT INTO tags(tag) VALUES ('Adventure');
 INSERT INTO tags(tag) VALUES ('Sci-Fi');
 INSERT INTO tags(tag) VALUES ('Drama');
 
--- Checkin Info
-SELECT * FROM peliculas;
-SELECT * FROM tags;
-
---- Agregando información a peliculas_tags
-
 INSERT INTO peliculas_tags(peliculas_id, tags_id) VALUES (1, 1);
 INSERT INTO peliculas_tags(peliculas_id, tags_id) VALUES (1, 2);
 INSERT INTO peliculas_tags(peliculas_id, tags_id) VALUES (1, 3);
@@ -51,10 +49,13 @@ INSERT INTO peliculas_tags(peliculas_id, tags_id) VALUES (2, 1);
 INSERT INTO peliculas_tags(peliculas_id, tags_id) VALUES (2, 4);
 
 -- Checkin Info again
+SELECT * FROM peliculas;
+SELECT * FROM tags;
 SELECT * FROM peliculas_tags;
 
---- Tags de cada película
-SELECT peliculas.nombre, COUNT(tags) as tags FROM peliculas 
+--- Cuenta la cantidad de tags que tiene cada película. Si una película no tiene tags debe
+--- mostrar 0.
+SELECT peliculas.nombre, COUNT(tags) AS tags FROM peliculas 
 LEFT JOIN peliculas_tags USING (peliculas_id)
 LEFT JOIN tags USING (tags_id)
 GROUP BY peliculas.nombre;
@@ -63,7 +64,7 @@ GROUP BY peliculas.nombre;
 -- Para hacerlo más "realista", lo haremos con UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
---- Creando tablas
+--- Crea las tablas respetando los nombres, tipos, claves primarias y foráneas y tipos de datos.
 CREATE TABLE questions
 (
     questions_uid UUID NOT NULL PRIMARY KEY,
@@ -88,7 +89,10 @@ CREATE TABLE answers
     CONSTRAINT FK_questions_uid FOREIGN KEY (questions_uid) REFERENCES questions(questions_uid)
 );
 
--- Insertando datos requeridos. 5 preguntas y 5 usuarios.
+-- Agrega datos, 5 usuarios y 5 preguntas, la primera pregunta debe estar contestada
+-- dos veces correctamente por distintos usuarios, la pregunta 2 debe estar contestada
+-- correctamente sólo por un usuario, y las otras 2 respuestas deben estar incorrectas.
+
 INSERT INTO questions(questions_uid, question, right_answer) VALUES (
     uuid_generate_v4(), '¿Los camaleones pueden cambiar de color?', 'Si pueden'
 );
@@ -125,24 +129,24 @@ INSERT INTO users(users_uid, name, age) VALUES (
 SELECT * FROM users;
 SELECT * FROM questions;
 
--- Insertando respuestas
+--- Insertando respuestas
 -- 1. Primera pregunta debe estar contestada dos veces por distintos usuarios.
 -- 2. Segunda pregunta debe estar contestada solo por un usuario.
 -- 3. Las otras dos incorrectas
 INSERT INTO answers(answers_uid, users_uid, questions_uid, answer) VALUES (
-    uuid_generate_v4(), '4cd69cff-3851-48dc-b3f9-5e5832d9f389', '31cd6e0b-6268-4446-9403-ee638873323a', 'Si pueden'
+    uuid_generate_v4(), '7137661c-72e5-4327-b85d-8fdafabbd439', 'aad65716-621d-4ab1-9f83-ccecf8ec0014', 'Si pueden'
 );
 INSERT INTO answers(answers_uid, users_uid, questions_uid, answer) VALUES (
-    uuid_generate_v4(), 'dc615714-32d9-481a-98ab-4e60d8f9887c', '31cd6e0b-6268-4446-9403-ee638873323a', 'Si pueden'
+    uuid_generate_v4(), '307eb749-9d74-4abc-91b1-9d53cdc40581', 'aad65716-621d-4ab1-9f83-ccecf8ec0014', 'Si pueden'
 );
 INSERT INTO answers(answers_uid, users_uid, questions_uid, answer) VALUES (
-    uuid_generate_v4(), '78166d3e-bba4-4d3d-9fe8-f43798ad97da', 'f09e51b7-1944-467d-b891-3a2642942ebb', 'Entre sus partículas, si tienen'
+    uuid_generate_v4(), '4a82a12a-fb78-419c-b2ac-3bcbb8ddc29e', '82a4c665-1c72-4ffb-9080-382c1237c046', 'Entre sus partículas, si tienen'
 );
 INSERT INTO answers(answers_uid, users_uid, questions_uid, answer) VALUES (
-    uuid_generate_v4(), '17d2fc9d-b73f-4b29-a2d3-50c216c741bd', '608b45ff-471b-405d-8298-a5b066117e3f', 'No lo sé'
+    uuid_generate_v4(), '9ebb1315-dd4f-441c-9b6a-f7de40014f2d', '2ce9f11d-66d4-4f62-8134-ad791c38345c', 'No lo sé'
 );
 INSERT INTO answers(answers_uid, users_uid, questions_uid, answer) VALUES (
-    uuid_generate_v4(), 'd08f6034-b60d-46e1-aa67-b9936ffba4ea', 'c8a0439d-3a6d-4a31-9f2b-1dde95803e2a', 'No sé :c'
+    uuid_generate_v4(), '3b45bd68-b32a-4e7d-8745-f8c6cec7ba73', '9c69b2bd-93a7-4c9f-809b-35b4f22acba9', 'No sé :c'
 );
 
 -- Checkin
@@ -172,10 +176,10 @@ SELECT * FROM users;
 SELECT users.name FROM answers 
 LEFT JOIN users USING (users_uid);
 
-DELETE FROM users WHERE users_uid = '4cd69cff-3851-48dc-b3f9-5e5832d9f389';
+-- No podremos, pero hay que hacer la comparativa para el test
+DELETE FROM users WHERE users_uid = '7137661c-72e5-4327-b85d-8fdafabbd439';
 
 -- Procedemos
-
 ALTER TABLE answers DROP CONSTRAINT FK_users_uid;
 -- Ahora
 ALTER TABLE answers 
